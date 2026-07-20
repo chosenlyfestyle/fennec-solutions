@@ -1,2 +1,1 @@
-# fennec-solutions
-Fennec Solutions Official Website
+Upload to GitHub and enable GitHub Pages.
