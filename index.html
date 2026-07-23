@@ -565,7 +565,7 @@ footer {
         <!-- SMS consent — required by TCPA and Twilio A2P 10DLC -->
         <div class="sms-consent-block">
           <label class="sms-consent-label">
-            <input type="checkbox" id="sms-consent" class="sms-checkbox">
+            <input type="checkbox" id="sms-consent" class="sms-checkbox" required aria-required="true">
             <span class="sms-consent-text">
               I agree to receive automated SMS messages from Fennec Solutions regarding my inquiry and demo scheduling.
             </span>
@@ -664,10 +664,56 @@ setTimeout(showNext, 1000);
 // ── Form submission ─────────────────────────────────────────────────
 function handleSubmit(e) {
   e.preventDefault();
-  const btn = e.target.querySelector('.form-submit');
-  btn.textContent = 'Sent — we\'ll be in touch soon ✓';
+
+  var form    = e.target;
+  var consent = document.getElementById('sms-consent');
+  var btn     = document.getElementById('demo-submit');
+  var block   = consent ? consent.closest('.sms-consent-block') : null;
+  var errId   = 'sms-consent-error';
+
+  // GATE: SMS consent checkbox must be explicitly checked.
+  // Nothing below executes until this passes.
+  if (!consent || !consent.checked) {
+    if (block) {
+      block.style.borderColor = '#E5615C';
+      block.style.background  = 'rgba(229,97,92,.07)';
+    }
+    var existing = document.getElementById(errId);
+    if (!existing) {
+      var err = document.createElement('p');
+      err.id = errId;
+      err.setAttribute('role', 'alert');
+      err.style.cssText = 'color:#E5615C;font-size:12px;padding:6px 0 0 26px;margin:0;font-family:"IBM Plex Mono",monospace';
+      err.textContent = 'You must agree to receive SMS messages to continue.';
+      if (block) block.after(err);
+    }
+    if (block) block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  // Clear any previous error
+  var existing = document.getElementById(errId);
+  if (existing) existing.remove();
+  if (block) { block.style.borderColor = ''; block.style.background = ''; }
+
+  // Collect real form values
+  var data = {
+    name:       (form.querySelector('input[type="text"]')  || {}).value  || '',
+    email:      (form.querySelector('input[type="email"]') || {}).value  || '',
+    phone:      (form.querySelector('input[type="tel"]')   || {}).value  || '',
+    industry:   (form.querySelector('select')              || {}).value  || '',
+    message:    (form.querySelector('textarea')            || {}).value  || '',
+    smsConsent: true,
+    timestamp:  new Date().toISOString()
+  };
+  console.log('[Fennec] Demo request submitted:', data);
+
+  // SUCCESS — only reached after consent is confirmed
+  btn.textContent      = "Sent \u2014 we'll be in touch soon \u2713";
   btn.style.background = 'var(--green)';
-  btn.disabled = true;
+  btn.style.color      = '#000';
+  btn.disabled         = true;
+  form.querySelectorAll('input,select,textarea').forEach(function(el){ el.disabled = true; });
 }
 
 // ── Scroll-activated nav highlight ──────────────────────────────────
